@@ -420,6 +420,18 @@ body {
   .header { flex-direction: column; align-items: flex-start; }
   .header-controls { width: 100%; justify-content: flex-start; }
 }
+
+/* 台风高风险标的标记 */
+.high-risk-flag {
+  color: #e74c3c;
+  font-size: 14px;
+  margin: 0 2px;
+  animation: pulse-flag 2s ease-in-out infinite;
+}
+@keyframes pulse-flag {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.2); }
+}
 </style>
 </head>
 <body>
@@ -628,6 +640,7 @@ function lonLatToSvg(lon, lat) {
 }
 
 // ========== 数据 ==========
+const TYPHOON_HIGH_RISK_PROPS = ["福建国贸启润汽车销售服务有限公司", "宁波振诚矿业有限公司", "福建国贸东本汽车贸易有限公司", "福建福申汽车销售服务有限公司", "福建省福京汽车贸易有限公司", "福州凯迪汽车服务有限公司", "福清信达通宝汽车销售服务有限公司", "福州信达嘉金雷克萨斯汽车销售服务有限公司", "福州信达诺汽车销售服务有限公司", "福建省天湖茶业有限公司", "三明厦钨新能源材料有限公司", "厦门厦钨新能源材料股份有限公司", "宁德厦钨新能源材料有限公司", "宁化行洛坑钨矿有限公司"];
 const CITY_DATA = {
   "成都": {lon:104.07,lat:30.67,qid:"101270101",count:8,segments:["国贸集团"],orgs:["开元支公司"],props:[{org:"开元支公司",insured:"保利汽车（成都）有限公司",addr:"四川省成都市",segment:"国贸集团"},{org:"开元支公司",insured:"保利汽车有限公司",addr:"四川省成都市",segment:"国贸集团"},{org:"开元支公司",insured:"成都启润投资有限公司",addr:"四川省成都市",segment:"国贸集团"},{org:"开元支公司",insured:"成都人居兴驿置业有限公司",addr:"四川省成都市",segment:"国贸集团"},{org:"开元支公司",insured:"成都蓉悦云锦房地产开发有限公司",addr:"四川省成都市",segment:"国贸集团"},{org:"开元支公司",insured:"成都蓉悦云熙房地产开发有限公司",addr:"四川省成都市",segment:"国贸集团"},{org:"开元支公司",insured:"成都蓉悦筑成房地产开发有限公司",addr:"四川省成都市",segment:"国贸集团"},{org:"开元支公司",insured:"成都同悦地产有限公司",addr:"四川省成都市",segment:"国贸集团"}]},
   "漳州": {lon:117.65,lat:24.51,qid:"101230601",count:1,segments:["国贸集团"],orgs:["开元支公司"],props:[{org:"开元支公司",insured:"福建国贸智谷投资发展有限公司",addr:"福建省漳州市",segment:"国贸集团"}]},
@@ -989,6 +1002,17 @@ function renderCityMarkers() {
   });
 }
 
+
+// 台风高风险标的标记
+function isHighRiskProp(insuredName) {
+  return TYPHOON_HIGH_RISK_PROPS.indexOf(insuredName) >= 0;
+}
+function getHighRiskCount(cityName) {
+  const city = CITY_DATA[cityName];
+  if (!city || !city.props) return 0;
+  return city.props.filter(p => TYPHOON_HIGH_RISK_PROPS.indexOf(p.insured) >= 0).length;
+}
+
 function renderCityList() {
   const container = document.getElementById('cityList');
   container.innerHTML = '';
@@ -1069,7 +1093,8 @@ function renderCityList() {
       <div class="city-header">
         <span class="city-name">
           ${cityName}
-          <span class="city-count">${filteredProps.length}标的</span>
+          ${getHighRiskCount(cityName) > 0 ? '<span class="high-risk-flag" title="台风高风险标的">🚩</span>' : ''}
+          <span class="city-count">${filteredProps.length}标的${getHighRiskCount(cityName) > 0 ? ' <span style="color:#e74c3c;font-size:11px;">(高风险' + getHighRiskCount(cityName) + ')</span>' : ''}</span>
           ${warningTags}
         </span>
       </div>
@@ -1082,7 +1107,7 @@ function renderCityList() {
       <div class="prop-list" data-city="${cityName}">
         ${filteredProps.map((p, idx) => `
           <div class="prop-item" data-idx="${idx}" style="${idx >= 5 ? 'display:none' : ''}">
-            <span class="prop-segment">[${p.segment}]</span> <span class="prop-org">[${p.org}]</span> ${p.insured}
+            <span class="prop-segment">[${p.segment}]</span> <span class="prop-org">[${p.org}]</span> ${isHighRiskProp(p.insured) ? '<span class="high-risk-flag" title="台风高风险标的">🚩</span>' : ''}${p.insured}
             <br>&nbsp;&nbsp;&nbsp;📍 ${p.addr}
           </div>
         `).join('')}
